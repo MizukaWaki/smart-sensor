@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>センサからの信号受信</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.js"></script>
+    <script src="https://obniz.com/js/jquery-3.2.1.min.js"></script>
+    <script src="https://unpkg.com/obniz/obniz.js"></script>
+  </head>
+
+  <body　style="text-align: center">
+    <h1>ツリーを光らせよう</h1>
+    <div>
+      <div>あなたのID: <span id="myid"></span></div>
+      <div>
+        ルームID: <input id="room" type="text" size="10" value="room001" />
+      </div>
+      <button id="connect">スタート</button>
+      <div>スマホでsmart.htmlに接続し現実で光らせてください。</div>
+      <div>＊オーナメントにトナカイが当たるとobnizが光ります。</div>
+    </div>
+    <script>
+      const obniz = new Obniz("0808-0143");
+      const LED_length = 15;
+      let leds;
+
+      let socket = io.connect();
+      let myid;
+
+      let room = document.querySelector("#room").value;
+      let btn = document.querySelector("#connect");
+
+      let g = 0;
+      let b = 0;
+      let x = 300;
+      let y = 400;
+      let tree;
+      let santa;
+
+      obniz.onconnect = async function () {
+        leds = obniz.wired("WS2812", { din: 26 });
+      };
+
+      btn.addEventListener("click", function () {
+        socket.emit("join", room);
+        btn.remove();
+      });
+
+      socket.on("mylogin", function (data) {
+        myid = data;
+        document.querySelector("#myid").innerHTML = myid;
+        console.log("あなたのID: ", myid);
+      });
+
+      socket.on("sensor", function (data) {
+        //console.log(g);
+        g = data.g;
+        b = data.b;
+      });
+      function preload() {
+        santa = loadImage("img/santa.png");
+        tree = loadImage("img/tree.png");
+      }
+
+      function setup() {
+        createCanvas(500, 500);
+        //background(200);
+        //targetX = random(width);
+        //targetY = random(height);
+      }
+
+      function draw() {
+        background(34, 58, 112);
+        image(tree, 0, 0, 500, 500);
+        x = x + 0.05 * parseFloat(g);
+        y = y + 0.05 * parseFloat(b);
+        image(santa, x, y, 70, 40);
+        //ledon([0x00, 0x00, 0x00]);
+        //fill(240, 243, 77, 30);
+        //circle(230, 55, 60);
+        //circle(230, 140, 20);
+        //circle(170, 150, 20);
+        //circle(290, 170, 20);
+        //circle(260, 220, 20);
+        //circle(180, 230, 20);
+        //circle(180, 230, 20);
+        //circle(280, 270, 20);
+        //circle(340, 310, 20);
+        //circle(300, 350, 20);
+        //circle(220, 330, 20);
+        //circle(140, 310, 20);
+
+        if (Math.sqrt((230 - x) * (230 - x) + (55 - y) * (55 - y)) < 50) {
+          ledon([0x66, 0x66, 0x00]); //星
+        } else if (
+          Math.sqrt((230 - x) * (230 - x) + (140 - y) * (140 - y)) < 20
+        ) {
+          ledon([0x00, 0x66, 0x00]); //緑
+        } else if (
+          Math.sqrt((170 - x) * (170 - x) + (150 - y) * (150 - y)) < 20
+        ) {
+          ledon([0x66, 0x66, 0x00]); //黄色上
+        } else if (
+          Math.sqrt((290 - x) * (290 - x) + (170 - y) * (170 - y)) < 20
+        ) {
+          ledon([0x66, 0x66, 0x66]); //白
+        } else if (
+          Math.sqrt((260 - x) * (260 - x) + (220 - y) * (220 - y)) < 20
+        ) {
+          ledon([0x66, 0x00, 0x00]); //赤
+        } else if (
+          Math.sqrt((180 - x) * (180 - x) + (230 - y) * (230 - y)) < 20
+        ) {
+          ledon([0x66, 0x66, 0x66]); //青上
+        } else if (
+          Math.sqrt((280 - x) * (280 - x) + (270 - y) * (270 - y)) < 20
+        ) {
+          ledon([0x66, 0x66, 0x00]); //黄色中
+        } else if (
+          Math.sqrt((340 - x) * (340 - x) + (310 - y) * (310 - y)) < 20
+        ) {
+          ledon([0x00, 0x30, 0x66]); //青下
+        } else if (
+          Math.sqrt((300 - x) * (300 - x) + (350 - y) * (350 - y)) < 20
+        ) {
+          ledon([0x66, 0x30, 0x00]); //オレンジ
+        } else if (
+          Math.sqrt((220 - x) * (220 - x) + (330 - y) * (330 - y)) < 20
+        ) {
+          ledon([0x66, 0x66, 0x00]); //黄色
+        } else if (
+          Math.sqrt((140 - x) * (140 - x) + (310 - y) * (310 - y)) < 20
+        ) {
+          ledon([0x00, 0x66, 0x66]); //水色
+        }
+      }
+
+      function ledon(color) {
+        let ledlist = [];
+        for (let i = 0; i < LED_length; i++) {
+          ledlist.push(color);
+        }
+        leds.rgbs(ledlist);
+      }
+    </script>
+  </body>
+</html>
